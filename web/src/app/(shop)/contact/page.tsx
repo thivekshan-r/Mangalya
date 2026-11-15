@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { ChatIcon } from "@/components/icons";
 import { getSettings } from "@/lib/catalogue";
 import { instagramHandle, text } from "@/lib/site";
-import { GENERAL_MESSAGE, WHOLESALE_MESSAGE, whatsappLink } from "@/lib/whatsapp";
+import { GENERAL_MESSAGE, whatsappLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -51,12 +52,9 @@ async function ContactDetails() {
       <div className={card}>
         <h2 className={label}>Wholesale</h2>
         <p className="mt-1 text-ink-soft">Buying for a shop or an event? Send us your list for a quote.</p>
-        <a
-          href={whatsappLink(settings.whatsappNumber, WHOLESALE_MESSAGE)}
-          className="flex h-11 items-center font-semibold text-maroon underline"
-        >
+        <Link href="/wholesale" className="flex h-11 items-center font-semibold text-maroon underline">
           Ask for wholesale prices
-        </a>
+        </Link>
       </div>
     </div>
   );

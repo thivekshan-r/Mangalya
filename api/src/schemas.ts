@@ -38,13 +38,39 @@ const image = z.object({
   alt: z.string().trim().max(200).default(""),
 });
 
-// ---- Login ----
+// ---- Login and accounts ----
+
+// Tidy first (spaces, capitals), then check it is an email address.
+const email = z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address"));
+
+const newPassword = z.string().min(10, "Use at least 10 characters").max(200);
 
 export const loginSchema = z.object({
-  // Tidy first (spaces, capitals), then check it is an email address.
-  email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
+  email,
   password: z.string().min(1, "Enter your password").max(200),
 });
+
+/** Changing your own password: the current one is needed as proof. */
+export const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, "Enter your current password").max(200),
+  newPassword,
+});
+
+/** The owner adding a staff account. */
+export const userCreateSchema = z.object({
+  name: z.string().trim().min(1, "Enter a name").max(100),
+  email,
+  password: newPassword,
+});
+
+/** The owner changing a staff account: rename, switch off or on, or set a new password. */
+export const userUpdateSchema = z
+  .object({
+    name: z.string().trim().min(1, "Enter a name").max(100),
+    active: z.boolean(),
+    password: newPassword,
+  })
+  .partial();
 
 // ---- Products ----
 
@@ -139,6 +165,41 @@ export const settingsUpdateSchema = z
     defaultLanguage: z.enum(["en", "ta"]),
   })
   .partial();
+
+// ---- Enquiries ----
+
+/** What the wholesale form on the website sends. */
+export const enquiryCreateSchema = z.object({
+  type: z.enum(["wholesale", "general"]).default("wholesale"),
+  name: z.string().trim().min(1, "Enter your name").max(100),
+  businessName: z.string().trim().max(150).default(""),
+  town: z.string().trim().max(100).default(""),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[\d\s()-]{7,20}$/, "Enter a phone number"),
+  items: z
+    .array(
+      z.object({
+        product: objectId.nullable().default(null),
+        description: z.string().trim().min(1, "Say which product").max(300),
+        quantity: z.coerce.number().int().min(1).max(100_000).default(1),
+      }),
+    )
+    .max(30)
+    .default([]),
+  message: z.string().trim().max(2000).default(""),
+});
+
+export const enquiryListQuerySchema = z.object({
+  status: z.enum(["new", "replied", "closed", "all"]).default("all"),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+export const enquiryUpdateSchema = z.object({
+  status: z.enum(["new", "replied", "closed"]),
+});
 
 export type ProductListQuery = z.infer<typeof productListQuerySchema>;
 export type AdminProductListQuery = z.infer<typeof adminProductListQuerySchema>;

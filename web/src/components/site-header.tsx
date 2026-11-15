@@ -26,6 +26,9 @@ async function NavLinks({ variant }: { variant: keyof typeof linkStyle }) {
             {text(category.name)}
           </Link>
         ))}
+      <Link href="/wholesale" className={className}>
+        Wholesale
+      </Link>
       <Link href="/about" className={className}>
         About
       </Link>

@@ -7,6 +7,7 @@ import { requireAuth, requireDatabase, requireTrustedOrigin } from "./middleware
 import { errorHandler, notFound } from "./middleware/errors";
 import { adminRouter } from "./routes/admin";
 import { createAuthRouter } from "./routes/auth";
+import { createEnquiryRouter } from "./routes/enquiries";
 import { healthRouter } from "./routes/health";
 import { publicRouter } from "./routes/public";
 
@@ -37,6 +38,9 @@ export function createApp() {
 
   // Admin panel: every route needs a login.
   app.use("/api/admin", requireTrustedOrigin, requireDatabase, requireAuth, adminRouter);
+
+  // The wholesale form on the customer site.
+  app.use("/api/enquiries", requireTrustedOrigin, requireDatabase, createEnquiryRouter());
 
   // Customer site: read-only, no login.
   app.use(["/api/products", "/api/categories", "/api/settings"], requireDatabase);

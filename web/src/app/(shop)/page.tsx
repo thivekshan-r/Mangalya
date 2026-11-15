@@ -7,7 +7,6 @@ import { SearchBox } from "@/components/search-box";
 import { getCategories, getProducts, getSettings } from "@/lib/catalogue";
 import { instagramHandle, text } from "@/lib/site";
 import type { ProductQuery } from "@/lib/types";
-import { WHOLESALE_MESSAGE, whatsappLink } from "@/lib/whatsapp";
 
 const heading = "font-serif text-xl font-semibold text-maroon";
 
@@ -47,21 +46,16 @@ async function ProductRow({ query }: { query: ProductQuery }) {
   return <ProductGrid products={list.items} />;
 }
 
-async function WholesaleCard() {
-  const settings = await getSettings();
-
+function WholesaleCard() {
   return (
     <section className="flex flex-col gap-2 rounded-xl border border-gold-soft bg-white p-[18px] md:flex-row md:items-center md:justify-between">
       <div>
         <h2 className="font-serif text-lg font-semibold text-maroon">Buying for a shop or an event?</h2>
         <p className="mt-1 text-sm text-ink-soft">Send us your list and we will reply with a wholesale quote.</p>
       </div>
-      <a
-        href={whatsappLink(settings.whatsappNumber, WHOLESALE_MESSAGE)}
-        className="flex h-11 items-center self-start font-semibold text-maroon underline md:self-auto"
-      >
+      <Link href="/wholesale" className="flex h-11 items-center self-start font-semibold text-maroon underline md:self-auto">
         Ask for wholesale prices
-      </a>
+      </Link>
     </section>
   );
 }
@@ -132,9 +126,7 @@ export default function Home() {
       </Reveal>
 
       <Reveal>
-        <Suspense>
-          <WholesaleCard />
-        </Suspense>
+        <WholesaleCard />
       </Reveal>
 
       <Reveal>

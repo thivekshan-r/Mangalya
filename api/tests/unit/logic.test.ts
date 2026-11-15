@@ -3,11 +3,15 @@ import { escapeRegex, slugify, uniqueSlug } from "../../src/lib/slug";
 import { parse } from "../../src/lib/validate";
 import { HttpError } from "../../src/middleware/errors";
 import {
+  enquiryCreateSchema,
   loginSchema,
+  passwordChangeSchema,
   productCreateSchema,
   productListQuerySchema,
   productUpdateSchema,
   settingsUpdateSchema,
+  userCreateSchema,
+  userUpdateSchema,
 } from "../../src/schemas";
 
 const CATEGORY = "0123456789abcdef01234567";
@@ -145,6 +149,67 @@ describe("other input", () => {
     expect(settingsUpdateSchema.safeParse({ whatsappNumber: "94770000000" }).success).toBe(true);
     expect(settingsUpdateSchema.safeParse({ whatsappNumber: "" }).success).toBe(true);
     expect(settingsUpdateSchema.safeParse({ whatsappNumber: "+94 77 000 0000" }).success).toBe(false);
+  });
+});
+
+describe("enquiry input", () => {
+  it("needs only a name and phone number, and fills in the rest", () => {
+    expect(enquiryCreateSchema.parse({ name: " Asha ", phone: "+94 77 123 4567" })).toEqual({
+      type: "wholesale",
+      name: "Asha",
+      businessName: "",
+      town: "",
+      phone: "+94 77 123 4567",
+      items: [],
+      message: "",
+    });
+  });
+
+  it("reads quantities typed as text and defaults to one", () => {
+    const result = enquiryCreateSchema.parse({
+      name: "Asha",
+      phone: "0771234567",
+      items: [{ description: "Frame", quantity: "12" }, { description: "Lamp" }],
+    });
+
+    expect(result.items).toEqual([
+      { product: null, description: "Frame", quantity: 12 },
+      { product: null, description: "Lamp", quantity: 1 },
+    ]);
+  });
+
+  it.each([
+    [{ phone: "0771234567" }, "name"],
+    [{ name: "Asha", phone: "call me" }, "phone"],
+    [{ name: "Asha", phone: "0771234567", items: [{ description: "", quantity: 1 }] }, "items.0.description"],
+    [{ name: "Asha", phone: "0771234567", items: [{ description: "Frame", quantity: 0 }] }, "items.0.quantity"],
+    [{ name: "Asha", phone: "0771234567", message: "x".repeat(2001) }, "message"],
+  ])("rejects %j", (input, field) => {
+    const result = enquiryCreateSchema.safeParse(input);
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.path.join("."))).toContain(field);
+  });
+});
+
+describe("account input", () => {
+  it("needs a password of ten characters or more for new accounts and password changes", () => {
+    const account = { name: "Kumar", email: " Kumar@Shop.LK " };
+
+    expect(userCreateSchema.safeParse({ ...account, password: "nine-char" }).success).toBe(false);
+    expect(userCreateSchema.parse({ ...account, password: "ten-chars!" })).toEqual({
+      name: "Kumar",
+      email: "kumar@shop.lk",
+      password: "ten-chars!",
+    });
+    expect(passwordChangeSchema.safeParse({ currentPassword: "old", newPassword: "short" }).success).toBe(false);
+    expect(passwordChangeSchema.safeParse({ currentPassword: "old", newPassword: "long-enough-now" }).success).toBe(true);
+  });
+
+  it("changes only what is sent when updating an account", () => {
+    expect(userUpdateSchema.parse({})).toEqual({});
+    expect(userUpdateSchema.parse({ active: false })).toEqual({ active: false });
+    expect(userUpdateSchema.safeParse({ password: "short" }).success).toBe(false);
   });
 });
 

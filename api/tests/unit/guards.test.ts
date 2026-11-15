@@ -18,6 +18,14 @@ describe("without a database", () => {
     },
   );
 
+  it("answers 503 to the enquiry form and the password change", async () => {
+    const enquiry = await request(app).post("/api/enquiries").send({ name: "Asha", phone: "0771234567" });
+    const password = await request(app).post("/api/auth/password").send({});
+
+    expect(enquiry.status).toBe(503);
+    expect(password.status).toBe(503);
+  });
+
   it("still answers the health check and unknown routes", async () => {
     expect((await request(app).get("/api/health")).status).toBe(200);
     expect((await request(app).get("/api/nope")).status).toBe(404);
@@ -37,9 +45,11 @@ describe("requests from other websites", () => {
   it("blocks changes started by a site that is not ours", async () => {
     const login = await request(app).post("/api/auth/login").set("Origin", "https://evil.example").send({});
     const admin = await request(app).post("/api/admin/products").set("Origin", "https://evil.example").send({});
+    const enquiry = await request(app).post("/api/enquiries").set("Origin", "https://evil.example").send({});
 
     expect(login.status).toBe(403);
     expect(admin.status).toBe(403);
+    expect(enquiry.status).toBe(403);
   });
 
   it("allows our own site and tools that send no Origin", async () => {

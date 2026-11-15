@@ -2,7 +2,7 @@
 
 Website for **Mangalya**, a shop in Sri Lanka selling photo frames, gift items, and Christian and Hindu ornaments, retail and wholesale. Customers browse the catalogue and order through WhatsApp; the shop manages products from an admin panel.
 
-> Status: **customer site and admin panel built.** Customers can browse and order on WhatsApp; the shop can log in at `/admin` to manage products, photos, categories and shop settings. Still to come: staff accounts, the wholesale page, Tamil, and going live.
+> Status: **customer site, wholesale enquiries and admin panel built.** Customers can browse, order on WhatsApp and ask for a wholesale quote; the shop can log in at `/admin` to manage products, photos, categories, enquiries, staff accounts and shop settings. Still to come: Tamil, and going live.
 
 ## Tech stack
 
@@ -32,8 +32,8 @@ mangalya/
 │       └── api/            Full tests against a throwaway MongoDB
 ├── web/                    Next.js website
 │   └── src/
-│       ├── app/(shop)/     Customer pages: home, category, product, search, about, contact
-│       ├── app/admin/      Admin panel: login, products, categories, shop settings
+│       ├── app/(shop)/     Customer pages: home, category, product, search, wholesale, about, contact
+│       ├── app/admin/      Admin panel: login, products, categories, enquiries, settings, staff
 │       ├── components/     Header, footer, product cards, order button; admin/ for the panel
 │       ├── lib/            catalogue.ts (data), sample-data.ts, whatsapp.ts
 │       └── assets/         Logo
@@ -91,7 +91,10 @@ Open http://localhost:3000/admin and log in with the owner account made by `npm 
 - **Products:** add, edit, hide, delete (restorable for 30 days) and restore. Changes show on the customer site straight away.
 - **Photos:** need the three `CLOUDINARY_` values in `api/.env` (see "Image uploads"). Photos are made smaller in the browser before upload.
 - **Categories:** add, rename, reorder, hide and delete. The order is the order of the website menu.
+- **Enquiries:** wholesale requests from the website form, with buttons to reply on WhatsApp, call, and mark as replied or closed. The tab shows how many are waiting.
 - **Shop settings:** WhatsApp number, Instagram page, address and opening hours. Owner only.
+- **Staff:** the owner can add logins for shop staff, switch them off, set a new password or remove them. Staff can manage products, categories and enquiries only.
+- **My account:** anyone logged in can change their own password.
 
 The panel reaches the API through the website's own address (`/api/...`), which Next.js passes on. Open the site at the address listed in the API's `WEB_ORIGIN` (http://localhost:3000 in development), or logins and saves are refused.
 
@@ -123,6 +126,7 @@ All addresses start with the API's address, `http://localhost:4000` in developme
 | GET | `/api/products/:slug` | One product and up to four related ones |
 | GET | `/api/categories` | Visible categories in menu order |
 | GET | `/api/settings` | WhatsApp number, Instagram link, address, hours, banners |
+| POST | `/api/enquiries` | The wholesale form: `{ name, phone, businessName?, town?, items?, message? }`. 5 per 10 minutes per address |
 
 **Login**
 
@@ -131,6 +135,7 @@ All addresses start with the API's address, `http://localhost:4000` in developme
 | POST | `/api/auth/login` | `{ email, password }`. Sets the login cookie. 10 failed attempts per 15 minutes |
 | POST | `/api/auth/logout` | Clears the login cookie |
 | GET | `/api/auth/me` | Who is logged in |
+| POST | `/api/auth/password` | `{ currentPassword, newPassword }`. Change your own password |
 
 **Admin (login required; owner and staff unless noted)**
 
@@ -148,6 +153,13 @@ All addresses start with the API's address, `http://localhost:4000` in developme
 | DELETE | `/api/admin/categories/:id` | Refused while products or sub-categories use it |
 | POST | `/api/admin/uploads` | Upload one image (form field `image`; JPEG, PNG or WebP up to 8 MB). Needs Cloudinary |
 | PUT | `/api/admin/settings` | Change shop settings. Owner only |
+| GET | `/api/admin/enquiries` | Enquiries, newest first. Query: `status` (`new`, `replied`, `closed`, `all`), `page` |
+| PATCH | `/api/admin/enquiries/:id` | `{ status }` |
+| DELETE | `/api/admin/enquiries/:id` | Owner only |
+| GET | `/api/admin/users` | Staff and owner accounts. Owner only |
+| POST | `/api/admin/users` | `{ name, email, password }`. Adds a staff account. Owner only |
+| PATCH | `/api/admin/users/:id` | `{ name?, active?, password? }`. Staff accounts only. Owner only |
+| DELETE | `/api/admin/users/:id` | Staff accounts only. Owner only |
 
 ## Image uploads
 
@@ -219,8 +231,8 @@ Step 1 is done when the live website shows the message from the live API.
 - [x] Step 1: Project setup
 - [x] Step 2: Design
 - [x] Step 3: API for catalogue and login
-- [x] Step 4: Admin panel (staff accounts still to do)
+- [x] Step 4: Admin panel
 - [x] Step 5: Customer site (on sample data; Step 4 comes after the database)
-- [ ] Step 6: Wholesale and Tamil
+- [ ] Step 6: Wholesale (done) and Tamil
 - [ ] Step 7: Launch
 - [ ] Step 8: Portfolio polish

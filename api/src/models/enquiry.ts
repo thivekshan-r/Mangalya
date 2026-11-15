@@ -12,10 +12,7 @@ const enquiryItemSchema = new Schema(
   { _id: false },
 );
 
-/**
- * A wholesale or general enquiry sent from the website.
- * The model is defined now; the form and its endpoints arrive in Step 6.
- */
+/** A wholesale or general enquiry sent from the website's form. */
 const enquirySchema = new Schema(
   {
     type: { type: String, enum: ["wholesale", "general"], default: "wholesale" },
@@ -34,3 +31,23 @@ export type EnquiryFields = InferSchemaType<typeof enquirySchema>;
 export type EnquiryDoc = HydratedDocument<EnquiryFields>;
 
 export const Enquiry = model("Enquiry", enquirySchema);
+
+/** The shape of an enquiry in the admin panel. */
+export function serializeEnquiry(enquiry: EnquiryDoc) {
+  return {
+    id: enquiry.id as string,
+    type: enquiry.type,
+    name: enquiry.name,
+    businessName: enquiry.businessName,
+    town: enquiry.town,
+    phone: enquiry.phone,
+    items: enquiry.items.map((item) => ({
+      product: item.product ? String(item.product) : null,
+      description: item.description,
+      quantity: item.quantity,
+    })),
+    message: enquiry.message,
+    status: enquiry.status,
+    createdAt: enquiry.createdAt.toISOString(),
+  };
+}

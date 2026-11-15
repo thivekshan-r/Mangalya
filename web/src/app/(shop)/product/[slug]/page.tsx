@@ -8,7 +8,6 @@ import { getProduct, getSettings } from "@/lib/catalogue";
 import { formatPrice, text } from "@/lib/site";
 import { SITE_URL } from "@/lib/site-url";
 import type { Product } from "@/lib/types";
-import { WHOLESALE_MESSAGE, whatsappLink } from "@/lib/whatsapp";
 
 type Props = PageProps<"/product/[slug]">;
 
@@ -137,12 +136,9 @@ async function ProductDetails({ params }: Pick<Props, "params">) {
 
           <section className="mt-5 flex flex-wrap items-center justify-between gap-x-3 rounded-xl border border-gold-soft bg-white px-4 py-1.5">
             <p className="text-sm">Buying in bulk?</p>
-            <a
-              href={whatsappLink(settings.whatsappNumber, `${WHOLESALE_MESSAGE}${text(product.name)} (${product.code}) × `)}
-              className="flex h-11 items-center text-sm font-semibold text-maroon underline"
-            >
+            <Link href={`/wholesale?product=${product.slug}`} className="flex h-11 items-center text-sm font-semibold text-maroon underline">
               Ask for a wholesale quote
-            </a>
+            </Link>
           </section>
         </div>
       </div>

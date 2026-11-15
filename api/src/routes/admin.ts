@@ -5,18 +5,25 @@ import { IMAGE_TYPES, MAX_IMAGE_BYTES, uploadImage } from "../lib/images";
 import { buildProductFilter, buildProductSort, pageInfo } from "../lib/productQuery";
 import { slugify, uniqueSlug } from "../lib/slug";
 import { parse } from "../lib/validate";
-import { requireRole } from "../middleware/auth";
+import { hashPassword } from "../lib/auth";
+import { currentUser, requireRole } from "../middleware/auth";
 import { HttpError } from "../middleware/errors";
 import { Category, serializeCategory } from "../models/category";
 import { Product, serializeProduct } from "../models/product";
+import { Enquiry, serializeEnquiry } from "../models/enquiry";
 import { getSettings, serializeSettings } from "../models/settings";
+import { User, serializeAccount } from "../models/user";
 import {
   adminProductListQuerySchema,
   categoryCreateSchema,
   categoryUpdateSchema,
+  enquiryListQuerySchema,
+  enquiryUpdateSchema,
   productCreateSchema,
   productUpdateSchema,
   settingsUpdateSchema,
+  userCreateSchema,
+  userUpdateSchema,
 } from "../schemas";
 
 /**
@@ -241,7 +248,114 @@ adminRouter.put("/settings", requireRole("owner"), async (req, res) => {
   res.json({ settings: serializeSettings(settings) });
 });
 
+// --------------------------------------------------------------- Enquiries
+
+/** GET /api/admin/enquiries?status=new|replied|closed|all  Newest first. */
+adminRouter.get("/enquiries", async (req, res) => {
+  const query = parse(enquiryListQuerySchema, req.query);
+  const filter = query.status === "all" ? {} : { status: query.status };
+
+  const [items, total, waiting] = await Promise.all([
+    Enquiry.find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip((query.page - 1) * query.limit)
+      .limit(query.limit),
+    Enquiry.countDocuments(filter),
+    Enquiry.countDocuments({ status: "new" }),
+  ]);
+
+  res.json({
+    items: items.map(serializeEnquiry),
+    ...pageInfo(total, query.page, query.limit),
+    /** How many enquiries nobody has replied to yet. */
+    waiting,
+  });
+});
+
+/** PATCH /api/admin/enquiries/:id  { status }  Mark as new, replied or closed. */
+adminRouter.patch("/enquiries/:id", async (req, res) => {
+  const { status } = parse(enquiryUpdateSchema, req.body);
+
+  const enquiry = await Enquiry.findById(req.params.id);
+  if (!enquiry) throw new HttpError(404, "Enquiry not found");
+
+  enquiry.status = status;
+  await enquiry.save();
+
+  res.json({ enquiry: serializeEnquiry(enquiry) });
+});
+
+/** DELETE /api/admin/enquiries/:id  Owner only. */
+adminRouter.delete("/enquiries/:id", requireRole("owner"), async (req, res) => {
+  const enquiry = await Enquiry.findById(req.params.id);
+  if (!enquiry) throw new HttpError(404, "Enquiry not found");
+
+  await enquiry.deleteOne();
+  res.status(204).end();
+});
+
+// ---------------------------------------------------------- Staff accounts
+// Owner only. Staff can manage products, categories and enquiries, but not
+// shop settings or other accounts.
+
+/** GET /api/admin/users */
+adminRouter.get("/users", requireRole("owner"), async (_req, res) => {
+  const users = await User.find().sort({ role: 1, name: 1 });
+  res.json({ items: users.map(serializeAccount) });
+});
+
+/** POST /api/admin/users  { name, email, password }  Adds a staff account. */
+adminRouter.post("/users", requireRole("owner"), async (req, res) => {
+  const input = parse(userCreateSchema, req.body);
+
+  const user = await User.create({
+    name: input.name,
+    email: input.email,
+    passwordHash: await hashPassword(input.password),
+    role: "staff",
+  });
+
+  res.status(201).json({ user: serializeAccount(user) });
+});
+
+/** PATCH /api/admin/users/:id  { name?, active?, password? }  Staff accounts only. */
+adminRouter.patch("/users/:id", requireRole("owner"), async (req, res) => {
+  const input = parse(userUpdateSchema, req.body);
+  const user = await findStaff(req.params.id, currentUser(res).id);
+
+  if (input.name !== undefined) user.name = input.name;
+  if (input.active !== undefined) user.active = input.active;
+  if (input.password !== undefined) user.passwordHash = await hashPassword(input.password);
+  await user.save();
+
+  res.json({ user: serializeAccount(user) });
+});
+
+/** DELETE /api/admin/users/:id  Staff accounts only. */
+adminRouter.delete("/users/:id", requireRole("owner"), async (req, res) => {
+  const user = await findStaff(req.params.id, currentUser(res).id);
+
+  await user.deleteOne();
+  res.status(204).end();
+});
+
 // ----------------------------------------------------------------- Helpers
+
+/**
+ * Finds a staff account the owner may change. Owner accounts are off limits
+ * here, so the owner cannot lock themselves out; they change their own
+ * password under "My account".
+ */
+async function findStaff(id: unknown, ownId: string) {
+  const user = await User.findById(id);
+  if (!user) throw new HttpError(404, "Account not found");
+
+  if (user.id === ownId) throw new HttpError(400, "Change your own account under My account");
+  if (user.role !== "staff") throw new HttpError(403, "Owner accounts cannot be changed here");
+
+  return user;
+}
+
 
 async function assertCategoryExists(id: string) {
   if (!(await Category.exists({ _id: id }))) {

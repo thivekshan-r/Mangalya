@@ -23,6 +23,15 @@ export type UserDoc = HydratedDocument<UserFields>;
 
 export const User = model("User", userSchema);
 
+/** A user as the owner sees them in the staff list. */
+export function serializeAccount(user: UserDoc) {
+  return {
+    ...serializeUser(user),
+    active: user.active,
+    lastLogin: user.lastLogin ? user.lastLogin.toISOString() : null,
+  };
+}
+
 /** The shape of a user in API responses. The password hash is never included. */
 export function serializeUser(user: UserDoc) {
   return {

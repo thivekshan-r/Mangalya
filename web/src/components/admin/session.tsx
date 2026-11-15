@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
-import { api, messageOf, type AdminUser, ApiError } from "@/lib/admin-api";
+import { api, messageOf, type AdminUser, ApiError, type EnquiryList } from "@/lib/admin-api";
 import { ErrorNote } from "./ui";
 
 const UserContext = createContext<AdminUser | null>(null);
@@ -16,9 +16,11 @@ export function useUser(): AdminUser {
 }
 
 const LINKS = [
-  { href: "/admin", label: "Products" },
-  { href: "/admin/categories", label: "Categories" },
-  { href: "/admin/settings", label: "Shop settings" },
+  { href: "/admin", label: "Products", ownerOnly: false },
+  { href: "/admin/categories", label: "Categories", ownerOnly: false },
+  { href: "/admin/enquiries", label: "Enquiries", ownerOnly: false },
+  { href: "/admin/settings", label: "Shop settings", ownerOnly: false },
+  { href: "/admin/staff", label: "Staff", ownerOnly: true },
 ];
 
 /**
@@ -31,6 +33,24 @@ export function AdminPanel({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [user, setUser] = useState<AdminUser | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  /** Enquiries nobody has replied to yet, shown as a number on the Enquiries tab. */
+  const [waiting, setWaiting] = useState(0);
+
+  // Re-count the waiting enquiries whenever the admin moves to another screen.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+
+    api<EnquiryList>("/api/admin/enquiries?status=new&limit=1")
+      .then((list) => {
+        if (!cancelled) setWaiting(list.waiting);
+      })
+      .catch(() => undefined); // the tab simply shows no number
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, pathname]);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,13 +97,16 @@ export function AdminPanel({ children }: { children: React.ReactNode }) {
             <Link href="/" className="flex h-11 items-center underline">
               View site
             </Link>
+            <Link href="/admin/account" className="flex h-11 items-center underline">
+              My account
+            </Link>
             <button type="button" onClick={logOut} className="h-11 underline">
               Log out
             </button>
           </div>
         </div>
         <nav aria-label="Admin" className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-2">
-          {LINKS.map((link) => (
+          {LINKS.filter((link) => !link.ownerOnly || user.role === "owner").map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -93,6 +116,11 @@ export function AdminPanel({ children }: { children: React.ReactNode }) {
               }`}
             >
               {link.label}
+              {link.href === "/admin/enquiries" && waiting > 0 && (
+                <span className="ml-1.5 rounded-full bg-gold px-1.5 text-xs font-bold text-maroon-deep" aria-label={`${waiting} waiting`}>
+                  {waiting}
+                </span>
+              )}
             </Link>
           ))}
         </nav>

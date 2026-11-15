@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
-import { DUMMY_HASH, SESSION_COOKIE, sessionCookieOptions, signSession, verifyPassword } from "../lib/auth";
+import { DUMMY_HASH, SESSION_COOKIE, hashPassword, sessionCookieOptions, signSession, verifyPassword } from "../lib/auth";
 import { parse } from "../lib/validate";
 import { currentUser, requireAuth, requireDatabase } from "../middleware/auth";
 import { HttpError } from "../middleware/errors";
 import { User, serializeUser, type Role } from "../models/user";
-import { loginSchema } from "../schemas";
+import { loginSchema, passwordChangeSchema } from "../schemas";
 
 /** Built per app, so each app (and each test) gets its own attempt counter. */
 export function createAuthRouter() {
@@ -54,6 +54,24 @@ export function createAuthRouter() {
   /** GET /api/auth/me  Who is logged in? Used by the admin panel on every page load. */
   router.get("/me", requireDatabase, requireAuth, (_req, res) => {
     res.json({ user: serializeUser(currentUser(res)) });
+  });
+
+  /** POST /api/auth/password  { currentPassword, newPassword }  Change your own password. */
+  router.post("/password", loginLimiter, requireDatabase, requireAuth, async (req, res) => {
+    const { currentPassword, newPassword } = parse(passwordChangeSchema, req.body);
+
+    const user = await User.findById(currentUser(res).id).select("+passwordHash").orFail();
+
+    if (!(await verifyPassword(currentPassword, user.passwordHash))) {
+      throw new HttpError(400, "The current password is not right", {
+        fields: [{ field: "currentPassword", message: "Not the current password" }],
+      });
+    }
+
+    user.passwordHash = await hashPassword(newPassword);
+    await user.save();
+
+    res.status(204).end();
   });
 
   return router;

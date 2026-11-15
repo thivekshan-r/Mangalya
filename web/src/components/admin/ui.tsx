@@ -1,18 +1,10 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useState } from "react";
 
 /** Small building blocks shared by the admin screens. */
 
-/**
- * Next.js keeps a page's state when you leave it and come back, which is
- * right for drafts but wrong for messages. This clears a message (or any
- * state) when the page is left, so "Saved" or an old error is not still
- * showing on the next visit.
- */
-export function useClearOnLeave(clear: () => void) {
-  useLayoutEffect(() => clear, []); // eslint-disable-line react-hooks/exhaustive-deps -- runs only when the page is hidden
-}
+export { useClearOnLeave } from "@/lib/hooks";
 
 export const inputClass =
   "h-12 w-full rounded-[10px] border border-line-strong bg-white px-3 outline-none focus:border-maroon disabled:bg-sand";

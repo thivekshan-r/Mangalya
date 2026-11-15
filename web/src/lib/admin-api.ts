@@ -19,6 +19,26 @@ export type AdminProductList = Omit<ProductList, "items"> & { items: AdminProduc
 
 export type AdminCategory = Category & { visible: boolean };
 
+export type EnquiryStatus = "new" | "replied" | "closed";
+
+export type Enquiry = {
+  id: string;
+  type: "wholesale" | "general";
+  name: string;
+  businessName: string;
+  town: string;
+  phone: string;
+  items: { product: string | null; description: string; quantity: number }[];
+  message: string;
+  status: EnquiryStatus;
+  createdAt: string;
+};
+
+export type EnquiryList = { items: Enquiry[]; page: number; pages: number; total: number; waiting: number };
+
+/** A login as the owner sees it in the staff list. */
+export type Account = AdminUser & { active: boolean; lastLogin: string | null };
+
 export type { Localized, Settings };
 
 export type FieldError = { field: string; message: string };
