@@ -1,0 +1,23 @@
+# Packages
+node_modules/
+
+# Secrets: real .env files never go to GitHub. The .env.example files do.
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+.next/
+out/
+coverage/
+
+# Logs and system files
+*.log
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/

@@ -1,0 +1,182 @@
+@import "tailwindcss";
+
+/*
+ * Brand tokens, taken from the Mangalya logo: deep maroon and gold on warm off-white.
+ * Each colour becomes a Tailwind class, for example bg-maroon or text-gold.
+ */
+@theme {
+  --color-maroon: #4a0404;
+  --color-maroon-deep: #2e0202;
+  --color-maroon-soft: #7a1d12;
+  --color-gold: #f5c138;
+  --color-gold-soft: #d9b45a;
+
+  --color-cream: #fdf8f1; /* page background */
+  --color-ivory: #fff6e0; /* text on maroon */
+  --color-sand: #efe3d3; /* photo placeholders */
+  --color-line: #e6d8c6; /* borders */
+  --color-line-strong: #d9c8b4;
+
+  --color-ink: #2a1414; /* body text */
+  --color-ink-soft: #5a3a30;
+  --color-ink-muted: #6b4a3a;
+
+  /* Darker than WhatsApp's own green, so white text on it is readable. */
+  --color-whatsapp: #0b7a5e;
+  --color-whatsapp-deep: #095f49;
+
+  /* Both fonts cover English and Tamil. */
+  --font-sans: "Noto Sans Tamil Variable", system-ui, sans-serif;
+  --font-serif: "Noto Serif Tamil Variable", Georgia, serif;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+}
+
+a,
+button,
+select,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold-soft);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- Motion */
+
+/* Banner text: each line rises into place when the page opens, one after another. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+.rise {
+  animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--step, 0) * 110ms);
+}
+
+/* The gold line under the banner heading draws itself from the left. */
+@keyframes draw {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.draw {
+  transform-origin: left;
+  animation: draw 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--step, 0) * 110ms);
+}
+
+/* Sections fade up the first time they scroll into view (see components/reveal.tsx). */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Cards inside a revealed section follow one by one (--wait is each card's turn). */
+.reveal .stagger > * {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.5s ease var(--wait, 0s),
+    transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) var(--wait, 0s),
+    translate 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.2s;
+}
+
+.reveal.is-visible .stagger > * {
+  opacity: 1;
+  transform: none;
+}
+
+.reveal .stagger > :nth-child(1) { --wait: 0.08s; }
+.reveal .stagger > :nth-child(2) { --wait: 0.16s; }
+.reveal .stagger > :nth-child(3) { --wait: 0.24s; }
+.reveal .stagger > :nth-child(4) { --wait: 0.32s; }
+
+/*
+ * Cards lift slightly under the pointer, and their photo moves closer.
+ * The lift uses "translate", a separate property from "transform", so it
+ * never clashes with the fade-up above.
+ */
+.lift {
+  transition:
+    translate 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.2s;
+}
+
+@media (hover: hover) {
+  .lift:hover {
+    translate: 0 -3px;
+    box-shadow: 0 10px 24px -12px rgb(74 4 4 / 0.35);
+  }
+
+  .lift:hover .zoom {
+    scale: 1.05;
+  }
+}
+
+.zoom {
+  transition: scale 0.5s ease;
+}
+
+/* The WhatsApp button sends out three soft rings shortly after the page opens. */
+@keyframes ring {
+  from {
+    box-shadow: 0 0 0 0 rgb(11 122 94 / 0.5);
+  }
+  to {
+    box-shadow: 0 0 0 18px rgb(11 122 94 / 0);
+  }
+}
+
+.ring-pulse {
+  animation: ring 1.6s ease-out 1.2s 3;
+}
+
+/* Respect the "reduce motion" setting on phones and computers: no movement at all. */
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .draw,
+  .ring-pulse {
+    animation: none;
+  }
+
+  .reveal,
+  .reveal .stagger > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .lift,
+  .zoom {
+    transition: none;
+  }
+
+  .lift:hover {
+    translate: none;
+  }
+
+  .lift:hover .zoom {
+    scale: none;
+  }
+}

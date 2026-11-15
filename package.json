@@ -1,0 +1,16 @@
+{
+  "name": "mangalya",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Website for Mangalya: Next.js front end and Express API",
+  "scripts": {
+    "setup": "npm install --prefix api && npm install --prefix web",
+    "dev": "concurrently --names api,web --prefix-colors blue,green \"npm run dev --prefix api\" \"npm run dev --prefix web\"",
+    "check": "npm run check:api && npm run check:web",
+    "check:api": "npm run lint --prefix api && npm run typecheck --prefix api && npm test --prefix api",
+    "check:web": "npm run lint --prefix web && npm run typecheck --prefix web && npm run build --prefix web"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.7"
+  }
+}
