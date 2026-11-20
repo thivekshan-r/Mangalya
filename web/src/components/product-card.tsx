@@ -1,26 +1,32 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { formatPrice, text } from "@/lib/site";
 import type { Product } from "@/lib/types";
+import { useI18n } from "./i18n-provider";
 import { FrameIcon } from "./icons";
 
 /** Shown in place of a photo until the shop uploads one. */
-export function PhotoPlaceholder({ label = "Photo coming soon" }: { label?: string }) {
+export function PhotoPlaceholder({ label }: { label?: string }) {
+  const { t } = useI18n();
+
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-sand text-xs text-ink-muted">
       <FrameIcon size={28} />
-      {label}
+      {label ?? t.common.photoSoon}
     </div>
   );
 }
 
 export function ProductCard({ product }: { product: Product }) {
+  const { lang, t, path } = useI18n();
   const cover = product.images[0];
-  const name = text(product.name);
+  const name = text(product.name, lang);
 
   return (
     <Link
-      href={`/product/${product.slug}`}
+      href={path(`/product/${product.slug}`)}
       className="lift flex flex-col overflow-hidden rounded-xl border border-line bg-white text-ink hover:border-gold-soft"
     >
       <div className="relative aspect-square overflow-hidden">
@@ -37,13 +43,13 @@ export function ProductCard({ product }: { product: Product }) {
         )}
         {!product.inStock && (
           <span className="absolute left-2 top-2 rounded-md bg-ink px-2 py-0.5 text-xs font-semibold text-white">
-            Out of stock
+            {t.common.outOfStock}
           </span>
         )}
       </div>
       <div className="flex flex-col gap-1 px-3 pb-3 pt-2.5">
         <span className="text-sm font-medium">{name}</span>
-        <span className="font-semibold text-maroon">{formatPrice(product.price)}</span>
+        <span className="font-semibold text-maroon">{formatPrice(product.price, lang)}</span>
       </div>
     </Link>
   );
@@ -77,9 +83,11 @@ export function ProductGridSkeleton({ count = 4 }: { count?: number }) {
 
 /** Shown when the catalogue cannot be loaded. */
 export function LoadProblem() {
+  const { t } = useI18n();
+
   return (
     <p role="status" className="rounded-xl border border-line bg-white px-4 py-6 text-center text-ink-soft">
-      We could not load this right now. Please try again in a moment, or message us on WhatsApp.
+      {t.common.loadProblem}
     </p>
   );
 }

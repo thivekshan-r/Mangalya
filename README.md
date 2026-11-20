@@ -2,7 +2,7 @@
 
 Website for **Mangalya**, a shop in Sri Lanka selling photo frames, gift items, and Christian and Hindu ornaments, retail and wholesale. Customers browse the catalogue and order through WhatsApp; the shop manages products from an admin panel.
 
-> Status: **customer site, wholesale enquiries and admin panel built.** Customers can browse, order on WhatsApp and ask for a wholesale quote; the shop can log in at `/admin` to manage products, photos, categories, enquiries, staff accounts and shop settings. Still to come: Tamil, and going live.
+> Status: **customer site, wholesale enquiries and admin panel built.** Customers can browse, order on WhatsApp and ask for a wholesale quote; the shop can log in at `/admin` to manage products, photos, categories, enquiries, staff accounts and shop settings. The customer site is in English and Tamil. Still to come: going live.
 
 ## Tech stack
 
@@ -83,6 +83,22 @@ The website decides where its data comes from by one setting in `web/.env.local`
 - **`API_URL=http://localhost:4000`:** it reads products, categories and shop settings from the API, which needs MongoDB connected and seeded (below).
 
 Restart `npm run dev` after changing `.env.local`. The live site must always have `API_URL` set.
+
+## English and Tamil
+
+Every customer page exists in both languages, each at its own address:
+
+| English | Tamil |
+| --- | --- |
+| `/` | `/ta` |
+| `/category/photo-frames` | `/ta/category/photo-frames` |
+| `/product/<slug>` | `/ta/product/<slug>` |
+
+- The **English / தமிழ்** link in the header switches to the same page in the other language and keeps any search or filters.
+- All interface text (menus, buttons, WhatsApp messages) lives in `web/src/lib/dictionaries.ts`. To change a word, edit it there; TypeScript makes sure every English entry has a Tamil one.
+- Product and category names, descriptions, the address and opening hours come from the admin panel. Fill in the Tamil fields there. If a Tamil field is empty, the English text is shown.
+- `web/src/proxy.ts` sends English addresses to the English pages and redirects `/en/...` to the address without `/en`. The admin panel stays English only.
+- Each page tells search engines about its other-language version (`hreflang`), so Google can show Tamil speakers the Tamil page.
 
 ## Admin panel
 
@@ -233,6 +249,6 @@ Step 1 is done when the live website shows the message from the live API.
 - [x] Step 3: API for catalogue and login
 - [x] Step 4: Admin panel
 - [x] Step 5: Customer site (on sample data; Step 4 comes after the database)
-- [ ] Step 6: Wholesale (done) and Tamil
+- [x] Step 6: Wholesale and Tamil
 - [ ] Step 7: Launch
 - [ ] Step 8: Portfolio polish

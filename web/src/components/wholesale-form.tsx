@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ApiError, api } from "@/lib/admin-api";
 import { useClearOnLeave } from "@/lib/hooks";
 import { wholesaleMessage, whatsappLink, type WholesaleDetails } from "@/lib/whatsapp";
+import { useI18n } from "./i18n-provider";
 import { ChatIcon } from "./icons";
 
 type Row = { product: string | null; description: string; quantity: string };
@@ -27,6 +28,8 @@ export function WholesaleForm({
   /** A product to start the list with, when the customer came from a product page. */
   firstItem?: { product: string | null; description: string };
 }) {
+  const { lang, t } = useI18n();
+  const w = t.wholesale;
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [town, setTown] = useState("");
@@ -61,7 +64,7 @@ export function WholesaleForm({
       message: message.trim(),
     };
     const products = rows.filter((row) => row.description.trim()).map((row) => row.product);
-    const href = whatsappLink(whatsappNumber, wholesaleMessage(details));
+    const href = whatsappLink(whatsappNumber, wholesaleMessage(details, lang));
 
     setSending(true);
     setProblem(null);
@@ -98,22 +101,22 @@ export function WholesaleForm({
     return (
       <div role="status" className="rounded-xl border border-gold-soft bg-white p-5 text-center">
         <h2 className="font-serif text-xl font-semibold text-maroon">
-          {sent.saved ? "Thank you. We have your enquiry." : "One more step"}
+          {sent.saved ? w.savedHeading : w.unsavedHeading}
         </h2>
         <p className="mt-2 text-ink-soft">
           {sent.saved
-            ? "We will reply with a quote. To get an answer sooner, send us the same details on WhatsApp."
-            : "We could not save your enquiry here, so please send it to us on WhatsApp. Your details are already typed in."}
+            ? w.savedText
+            : w.unsavedText}
         </p>
         <a
           href={sent.href}
           className="mt-4 flex h-[52px] items-center justify-center gap-2.5 rounded-full bg-whatsapp font-semibold text-white hover:bg-whatsapp-deep"
         >
           <ChatIcon size={22} />
-          Send on WhatsApp
+          {w.sendOnWhatsApp}
         </a>
         <button type="button" onClick={() => setSent(null)} className="mt-2 h-11 font-semibold text-maroon underline">
-          Send another enquiry
+          {w.another}
         </button>
       </div>
     );
@@ -129,7 +132,7 @@ export function WholesaleForm({
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="ws-name" className={label}>
-          Your name
+          {w.name}
         </label>
         <input id="ws-name" required autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} maxLength={100} className={input} />
       </div>
@@ -137,13 +140,13 @@ export function WholesaleForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ws-business" className={label}>
-            Shop or business name
+            {w.business}
           </label>
           <input id="ws-business" autoComplete="organization" value={businessName} onChange={(event) => setBusinessName(event.target.value)} maxLength={150} className={input} />
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ws-town" className={label}>
-            Town
+            {w.town}
           </label>
           <input id="ws-town" autoComplete="address-level2" value={town} onChange={(event) => setTown(event.target.value)} maxLength={100} className={input} />
         </div>
@@ -151,43 +154,43 @@ export function WholesaleForm({
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="ws-phone" className={label}>
-          Phone or WhatsApp number
+          {w.phone}
         </label>
         <input id="ws-phone" required type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} maxLength={20} className={input} />
       </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className={`${label} mb-1.5`}>What would you like, and how many?</legend>
+        <legend className={`${label} mb-1.5`}>{w.items}</legend>
 
         {rows.map((row, index) => (
           <div key={index} className="flex items-center gap-2">
             <label htmlFor={`ws-item-${index}`} className="sr-only">
-              Product {index + 1}
+              {w.itemLabel(index + 1)}
             </label>
             <input
               id={`ws-item-${index}`}
               value={row.description}
               onChange={(event) => setRow(index, { description: event.target.value, product: null })}
-              placeholder="Product name or code"
+              placeholder={w.itemPlaceholder}
               maxLength={300}
               className={`${field} min-w-0 flex-1`}
             />
             <label htmlFor={`ws-quantity-${index}`} className="sr-only">
-              Quantity of product {index + 1}
+              {w.quantityLabel(index + 1)}
             </label>
             <input
               id={`ws-quantity-${index}`}
               inputMode="numeric"
               value={row.quantity}
               onChange={(event) => setRow(index, { quantity: event.target.value.replace(/\D/g, "") })}
-              placeholder="Qty"
+              placeholder={w.quantityPlaceholder}
               maxLength={6}
               className={`${field} w-20 shrink-0`}
             />
             {rows.length > 1 && (
               <button
                 type="button"
-                aria-label={`Remove product ${index + 1}`}
+                aria-label={w.removeItem(index + 1)}
                 onClick={() => setRows(rows.filter((_, position) => position !== index))}
                 className="h-11 w-9 shrink-0 text-[#a3221a]"
               >
@@ -199,28 +202,28 @@ export function WholesaleForm({
 
         {rows.length < 30 && (
           <button type="button" onClick={() => setRows([...rows, emptyRow()])} className="h-11 self-start font-semibold text-maroon underline">
-            Add another product
+            {w.addItem}
           </button>
         )}
       </fieldset>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="ws-message" className={label}>
-          Anything else?
+          {w.message}
         </label>
         <textarea
           id="ws-message"
           rows={3}
           value={message}
           onChange={(event) => setMessage(event.target.value)}
-          placeholder="When you need it, delivery, custom sizes"
+          placeholder={w.messagePlaceholder}
           maxLength={2000}
           className={`${input} h-auto py-2.5`}
         />
       </div>
 
       <button type="submit" disabled={sending} className="flex h-[52px] items-center justify-center rounded-full bg-maroon font-semibold text-ivory hover:bg-maroon-deep disabled:opacity-60">
-        {sending ? "Sending…" : "Ask for a quote"}
+        {sending ? w.sending : w.send}
       </button>
     </form>
   );

@@ -1,3 +1,5 @@
+import { DICTIONARIES } from "./dictionaries";
+import type { Lang } from "./i18n";
 import { formatPrice, text } from "./site";
 import type { Product } from "./types";
 
@@ -10,19 +12,23 @@ export function whatsappLink(number: string, message: string): string {
 }
 
 /**
- * The message sent by the "Order on WhatsApp" button.
- * `productUrl` is the full address of the product page, so the shop can open it from the chat.
+ * The message sent by the "Order on WhatsApp" button, in the language the
+ * customer is reading. The product code is always included, so the shop can
+ * find the item whichever language the message is in.
+ * `productUrl` is the full address of the product page.
  */
-export function orderMessage(product: Product, chosen: Record<string, string>, productUrl: string): string {
+export function orderMessage(product: Product, chosen: Record<string, string>, productUrl: string, lang: Lang = "en"): string {
+  const t = DICTIONARIES[lang].whatsapp;
+
   const lines = [
-    "Hello Mangalya, I would like to order:",
+    t.orderIntro,
     "",
-    `*${text(product.name)}*`,
-    `Code: ${product.code}`,
+    `*${text(product.name, lang)}*`,
+    `${t.code}: ${product.code}`,
     ...product.options
       .filter((option) => chosen[option.name])
       .map((option) => `${option.name}: ${chosen[option.name]}`),
-    `Price: ${formatPrice(product.price)}`,
+    `${t.price}: ${formatPrice(product.price, lang)}`,
     "",
     productUrl,
   ];
@@ -40,19 +46,18 @@ export type WholesaleDetails = {
 };
 
 /** The WhatsApp version of a filled-in wholesale form. Empty answers are left out. */
-export function wholesaleMessage(details: WholesaleDetails): string {
-  const lines = ["Hello Mangalya, I would like a wholesale quote.", "", `Name: ${details.name}`];
+export function wholesaleMessage(details: WholesaleDetails, lang: Lang = "en"): string {
+  const t = DICTIONARIES[lang].whatsapp;
+  const lines = [t.wholesaleIntro, "", `${t.name}: ${details.name}`];
 
-  if (details.businessName) lines.push(`Business: ${details.businessName}`);
-  if (details.town) lines.push(`Town: ${details.town}`);
-  lines.push(`Phone: ${details.phone}`);
+  if (details.businessName) lines.push(`${t.business}: ${details.businessName}`);
+  if (details.town) lines.push(`${t.town}: ${details.town}`);
+  lines.push(`${t.phone}: ${details.phone}`);
 
   if (details.items.length > 0) {
-    lines.push("", "Products:", ...details.items.map((item) => `- ${item.quantity} × ${item.description}`));
+    lines.push("", `${t.products}:`, ...details.items.map((item) => `- ${item.quantity} × ${item.description}`));
   }
   if (details.message) lines.push("", details.message);
 
   return lines.join("\n");
 }
-
-export const GENERAL_MESSAGE = "Hello Mangalya, I have a question.";

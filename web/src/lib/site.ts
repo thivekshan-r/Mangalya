@@ -1,20 +1,20 @@
+import { DICTIONARIES } from "./dictionaries";
+import type { Lang } from "./i18n";
 import type { Localized } from "./types";
-
-export const SITE_NAME = "Mangalya";
-export const SITE_TAGLINE = "Photo frames, gifts and ornaments";
 
 /**
  * Picks the text for the page's language, falling back to English when the
- * Tamil text is empty. The site is English-only until Step 6 adds the switch.
+ * Tamil text has not been typed in yet.
  */
-export function text(value: Localized, language: "en" | "ta" = "en"): string {
-  return (language === "ta" && value.ta) || value.en;
+export function text(value: Localized, lang: Lang = "en"): string {
+  return (lang === "ta" && value.ta.trim()) || value.en;
 }
 
-/** "Rs. 4,500", or "Ask for price" when the shop has not set one. */
-export function formatPrice(price: number | null): string {
-  if (price === null) return "Ask for price";
-  return `Rs. ${new Intl.NumberFormat("en-US").format(price)}`;
+/** "Rs. 4,500" / "ரூ. 4,500", or "Ask for price" when the shop has not set one. */
+export function formatPrice(price: number | null, lang: Lang = "en"): string {
+  const t = DICTIONARIES[lang].common;
+  if (price === null) return t.askForPrice;
+  return `${t.rupees} ${new Intl.NumberFormat("en-US").format(price)}`;
 }
 
 /** "@mangalya_batti" from the Instagram address. */

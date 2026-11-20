@@ -2,14 +2,8 @@
 
 import Form from "next/form";
 import Link from "next/link";
-import type { Sort } from "@/lib/types";
-
-const SORT_LABELS: Record<Sort, string> = {
-  newest: "Newest first",
-  price_asc: "Price: low to high",
-  price_desc: "Price: high to low",
-  name: "Name: A to Z",
-};
+import { SORTS, type Sort } from "@/lib/types";
+import { useI18n } from "./i18n-provider";
 
 /**
  * Sort and stock filter for a product list. Changing either reloads the list
@@ -21,13 +15,15 @@ export function ListControls({
   inStockOnly,
   q,
 }: {
-  /** The page these controls belong to, for example "/category/photo-frames". */
+  /** The page these controls belong to, with its language prefix, for example "/ta/category/photo-frames". */
   action: string;
   sort: Sort;
   inStockOnly: boolean;
   /** Search text to keep when the controls are used on the search page. */
   q?: string;
 }) {
+  const { t } = useI18n();
+
   return (
     <Form
       action={action}
@@ -37,7 +33,7 @@ export function ListControls({
       {q && <input type="hidden" name="q" value={q} />}
 
       <label htmlFor="sort" className="sr-only">
-        Sort products
+        {t.list.sortLabel}
       </label>
       <select
         id="sort"
@@ -45,21 +41,21 @@ export function ListControls({
         defaultValue={sort}
         className="h-11 rounded-[10px] border border-line-strong bg-white px-3 font-semibold"
       >
-        {Object.entries(SORT_LABELS).map(([value, label]) => (
+        {SORTS.map((value) => (
           <option key={value} value={value}>
-            {label}
+            {t.list.sorts[value]}
           </option>
         ))}
       </select>
 
       <label className="flex h-11 items-center gap-2">
         <input type="checkbox" name="stock" value="in" defaultChecked={inStockOnly} className="h-5 w-5 accent-maroon" />
-        In stock only
+        {t.list.inStockOnly}
       </label>
 
       <noscript>
         <button type="submit" className="h-11 rounded-[10px] border border-maroon px-4 font-semibold text-maroon">
-          Apply
+          {t.list.apply}
         </button>
       </noscript>
     </Form>
@@ -68,23 +64,24 @@ export function ListControls({
 
 /** Previous / Next links under a product list. */
 export function Pagination({ page, pages, hrefs }: { page: number; pages: number; hrefs: { previous: string; next: string } }) {
+  const { t } = useI18n();
   if (pages <= 1) return null;
 
   const button = "flex h-11 items-center rounded-full border border-maroon px-5 font-semibold text-maroon hover:bg-ivory";
 
   return (
-    <nav aria-label="Pages" className="mt-6 flex items-center justify-center gap-4">
+    <nav aria-label={t.common.pages} className="mt-6 flex items-center justify-center gap-4">
       {page > 1 && (
         <Link href={hrefs.previous} className={button}>
-          Previous
+          {t.common.previous}
         </Link>
       )}
       <span className="text-sm text-ink-soft">
-        Page {page} of {pages}
+        {t.common.page(page, pages)}
       </span>
       {page < pages && (
         <Link href={hrefs.next} className={button}>
-          Next
+          {t.common.next}
         </Link>
       )}
     </nav>

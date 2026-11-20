@@ -5,13 +5,15 @@ import { createContext, useContext, useState } from "react";
 import { text } from "@/lib/site";
 import type { Product } from "@/lib/types";
 import { orderMessage, whatsappLink } from "@/lib/whatsapp";
+import { useI18n } from "./i18n-provider";
 import { ChatIcon } from "./icons";
 import { PhotoPlaceholder } from "./product-card";
 
 /** The product's photos: one large photo and a row of thumbnails to switch between them. */
 export function ProductGallery({ product }: { product: Product }) {
+  const { lang, t } = useI18n();
   const [current, setCurrent] = useState(0);
-  const name = text(product.name);
+  const name = text(product.name, lang);
   const photo = product.images[current];
 
   return (
@@ -37,7 +39,7 @@ export function ProductGallery({ product }: { product: Product }) {
             <button
               key={image.url}
               type="button"
-              aria-label={`Photo ${index + 1}`}
+              aria-label={t.product.photo(index + 1)}
               aria-pressed={index === current}
               onClick={() => setCurrent(index)}
               className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 ${
@@ -85,6 +87,8 @@ export function OrderProvider({
   productUrl: string;
   children: React.ReactNode;
 }) {
+  const { lang } = useI18n();
+
   // Start with the first value of each option chosen.
   const [chosen, setChosen] = useState<Record<string, string>>(() =>
     Object.fromEntries(product.options.map((option) => [option.name, option.values[0] ?? ""])),
@@ -94,7 +98,7 @@ export function OrderProvider({
     product,
     chosen,
     choose: (option, value) => setChosen({ ...chosen, [option]: value }),
-    href: whatsappLink(whatsappNumber, orderMessage(product, chosen, productUrl)),
+    href: whatsappLink(whatsappNumber, orderMessage(product, chosen, productUrl, lang)),
   };
 
   return <OrderContext value={order}>{children}</OrderContext>;
@@ -134,6 +138,7 @@ export function OptionPicker() {
 /** The "Order on WhatsApp" button. Its message includes the chosen options. */
 export function OrderButton() {
   const { product, href } = useOrder();
+  const { t } = useI18n();
 
   return (
     <a
@@ -141,7 +146,7 @@ export function OrderButton() {
       className="flex h-[52px] items-center justify-center gap-2.5 rounded-full bg-whatsapp text-base font-semibold text-white hover:bg-whatsapp-deep"
     >
       <ChatIcon size={22} />
-      {product.inStock && product.price !== null ? "Order on WhatsApp" : "Ask on WhatsApp"}
+      {product.inStock && product.price !== null ? t.product.order : t.product.ask}
     </a>
   );
 }

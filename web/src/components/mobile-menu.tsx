@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "./i18n-provider";
 import { CloseIcon, MenuIcon } from "./icons";
 
 /**
@@ -8,13 +9,14 @@ import { CloseIcon, MenuIcon } from "./icons";
  * The links themselves are rendered on the server and passed in as children.
  */
 export function MobileMenu({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       <button
         type="button"
-        aria-label={open ? "Close menu" : "Open menu"}
+        aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
         aria-expanded={open}
         aria-controls="mobile-menu"
         onClick={() => setOpen(!open)}
@@ -26,7 +28,7 @@ export function MobileMenu({ children }: { children: React.ReactNode }) {
       {open && (
         <nav
           id="mobile-menu"
-          aria-label="Main"
+          aria-label={t.nav.main}
           // Close the menu when any link inside it is tapped.
           onClick={(event) => {
             if ((event.target as HTMLElement).closest("a")) setOpen(false);
